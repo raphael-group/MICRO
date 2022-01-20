@@ -1,6 +1,6 @@
 ## Overview
 
-MPCR computes the chromosome number of a set of adjacencies introduced by a complex rearrangement. MPCR takes as input a [JaBbA graph](https://www.sciencedirect.com/science/article/pii/S0092867420309971?via%3Dihub) and outputs the chromosome numbers of the subsets of the novel adjacencies annotated as introduced by complex rearrangements.  
+MPCR computes the chromosome number c of a subset of the novel adjacencies introduced by a complex rearrangement and outputs c if c is lower than the number of chromosomes affected by that complex rearrangement in the reference genome. MPCR takes as input a [JaBbA graph](https://www.sciencedirect.com/science/article/pii/S0092867420309971?via%3Dihub).
 
 ## Installing MPCR
 
@@ -12,18 +12,19 @@ MPCR is written in python3 and requires the following dependencies: networkx, js
 
 ## Running MPCR
 
-MPCR can be run using the following command:
+Running
 ```
 python3 mpcr.py 
 ```
-## Input
+applies MPCR to the JaBbA graphs that are present in the directory 'jabba_data/graphs'. Upon instalation 'jabba_data/graphs' holds 22 JaBbA graphs from the [gGnome.js portal](http://mskilab.com/gGraph/) for which MPCR identifies a subset b of the novel adjacencies introduced by a chromothripsis event with the chromosome number of b being lower than the number of chromosomes that b affects in the reference genome. 
 
-Directory 'jabba_data/graphs' holds 22 JaBbA graphs downloaded from [gGnome.js portal] (http://mskilab.com/gGraph/), the rest of the JaBbA graphs from [gGnome.js portal] (http://mskilab.com/gGraph/) can be downloaded to the directory 'jabba_data/graphs' by using the following command:  
+The rest of the JaBbA graphs from [gGnome.js portal](http://mskilab.com/gGraph/) can be downloaded to the directory 'jabba_data/graphs' by running  
 
 ```
 python3 request.py 
 
 ```
+
 
 
 
