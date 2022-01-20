@@ -24,3 +24,6 @@ for name in datafiles[1:]:
     print(name)
     with open('graphs/'+name, 'w') as outfile:
         json.dump(data, outfile, indent=4)
+        
+
+

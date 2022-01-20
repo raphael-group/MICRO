@@ -1,5 +1,6 @@
 #WE ASSUME THAT NEIGHBORING SEGMENTS HAVE iid's THAT DIFFER BY ONE!
 
+from fileinput import filename
 import json
 import copy
 import networkx as nx
@@ -48,28 +49,38 @@ def read_type_and_dataset(jabba_graph):
     return type, dataset
 
 
-def read_annotations(dir_name, min_number_of_chromosomes):
+def read_annotations(dir_name, min_number_of_chromosomes, list_of_annotations):
     typeTOtotalnumber  = defaultdict(int)
     typeTOnumberwithchromothripsis = defaultdict(int)
 
     files_of_interest = [] 
+    total_files = 0
+    total_annotations = 0
 
     for json_file in os.listdir(dir_name):
         
+        total_files +=1 
+
         data = read_json(dir_name+json_file)
         type, dataset = read_type_and_dataset(data)
 
         typeTOtotalnumber[type]+=1
-        anotationsTOchr = anotations(data)
+        anotationsTOchr = anotations(data, list_of_annotations)
 
         add = False
         for mutation in anotationsTOchr:
             if len(anotationsTOchr[mutation]) >= min_number_of_chromosomes:
                 add = True
+                total_annotations += 1
+
         if add:
             typeTOnumberwithchromothripsis[type] +=1
             files_of_interest.append(json_file)
 
+    print("number of JaBbA graphs in {}:  {}".format(dir_name,total_files))
+    print("number of JaBbA graphs in {} annotated with a complex rearrangement from a list {} affecting at least {} chromsomes: {}".format(dir_name,list_of_annotations, min_number_of_chromosomes, len(files_of_interest)))
+    print("total number of complex rearrangements from a list {} affecting at least {} chromsomes: {}".format(list_of_annotations, min_number_of_chromosomes, total_annotations))
+   
     return files_of_interest, typeTOtotalnumber, typeTOnumberwithchromothripsis
 
 #Scans the input graph for the mutation annotations.
@@ -77,7 +88,7 @@ def read_annotations(dir_name, min_number_of_chromosomes):
 #it finds all the chromosomes including block extremities 
 #incident to edges in this mutation.
 
-def anotations(data):
+def anotations(data, list_of_annotations):
     iidTOchr = {}
     anotationsTOchr = {}
     
@@ -98,7 +109,7 @@ def anotations(data):
                 #An edge might have multiple annotations separated by dashes
                 for mutation in annotation.split("|"):
                     #Select particular mutations
-                    if mutation.split("=")[0] == 'chromothripsis':
+                    if mutation.split("=")[0] in list_of_annotations:
                         if mutation not in anotationsTOchr:        
                             anotationsTOchr[mutation] = set({source_chr,sink_chr})
                         else: 
@@ -422,10 +433,15 @@ class sample:
         self.annotations = []
 
 class annotation:
-    def __init__(self, title):
+    def __init__(self, title, filename, type, dataset):
+        self.filename = filename
+        self.type = type
+        self.dataset = dataset
         self.title = title
         self.scenario_max_sur = None
         self.scenario_removal_max_sur = None
+        self.nodes_of_multibreak = []
+        self.chromosomes = []
 
 #        _____________________________________________
 #_______/      Modify the breakpoint graph            \_____________________________________________

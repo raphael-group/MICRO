@@ -7,15 +7,19 @@ from lib import auxilliary
 
 #DUPLICATION_LENGTH = 1000, DELETION_LENGTH = 100000
 
+LIST_OF_ANNOTATIONS = ['chromothripsis']
+GRAPHS = 'jabba_data/graphs/'
+
+
 TEMPLATED_INSERTIONS = False
 DUPLICATION_LENGTH = 1000
 DELETION_LENGTH = 100000
-NUMBER_OF_COMPONENTS = 1
+NUMBER_OF_COMPONENTS = 2
+
 
 MIN_NUMBER_OF_CHROMOSOMES = 2
 
 
-GRAPHS = 'jabba_data/graphs/'
 
 #        ______________________________________
 #_______/       STUDY COMPONENTS               \_____________________________________________
@@ -109,7 +113,7 @@ def check_if_scenario_more_optimal(nxcomponents, iidTOlength, ordered_partition,
 def check_if_enough_to_remove(affected, ordered_partition, nxcomponents, iidTOlength, scenario_no_intersection_max_surr, proportion_chromo):
     surrounding, deletions, duplications, gray = stats_ordered_partition(nxcomponents, ordered_partition, iidTOlength)
     if len(affected) < scenario_no_intersection_max_surr.max_rearranged:
-        return jabba_preporcessing.scenario(surrounding, len(affected), len(affected), [len(affected)], ordered_partition, gray, proportion_chromo, deletions, duplications)
+        return jabba_preporcessing.scenario(surrounding, len(affected), affected, [len(affected)], ordered_partition, gray, proportion_chromo, deletions, duplications)
     return scenario_no_intersection_max_surr
 
 #        _________________________________
@@ -118,26 +122,49 @@ def check_if_enough_to_remove(affected, ordered_partition, nxcomponents, iidTOle
 
 
 def study_files_with_chromothripsis(files_of_interest):
-    rearrange = 0
-    remove = 0
-    total_annotations = 0
+
+    rearrange = []
+    remove = []
 
     for file in files_of_interest:
         data = jabba_preporcessing.read_json(GRAPHS+file)
         sample = study_sample(data, file)
         
         for annotation in sample.annotations:
-            total_annotations +=1
             if annotation.scenario_max_sur != None:
-                rearrange +=1
+                rearrange.append(annotation)
 
             if annotation.scenario_removal_max_sur != None:
-                remove+=1
+                remove.append(annotation)
 
-    print("# of annotations", total_annotations)    
-    print("# of rearrange:",rearrange)
-    print("# of remove:", remove)
-    print("total files", len(files_of_interest))
+    print("")
+    print("There are {} complex rearrangements for which there exists an ISA multi-break transforming the reference genome into a genome in which that complex rearrangemt affects less chromosomes".format(len(rearrange)))
+  
+    index = 0
+    for annotation in rearrange:
+        index+=1
+        scenario = annotation.scenario_max_sur
+        print("")
+        print("{}. filename: {}, type: {}, dataset: {}".format(index, annotation.filename, annotation.type, annotation.dataset))
+        print("annotation: {}, affected chromosomes: {}, chromosome number: {}".format(annotation.title, annotation.chromosomes, scenario.rearranged[-1]))
+        print("extremities of the ISA multi-break:", annotation.nodes_of_multibreak)
+        print("number of the deleted nucleotides: {}, the number of duplicated nucleotides: {}".format(sum(scenario.deletions), sum(scenario.duplications)))
+
+    print("")
+    print("There are {} complex rearrangements for which some of the novel adjacencies are missannotated as having been introduced by that complex rearrangenent.".format(len(remove)))
+
+    index = 0
+    for annotation in remove:
+        index += 1
+        scenario = annotation.scenario_removal_max_sur
+        print("")
+        print("{}. filename: {}, type: {}, dataset: {}".format(index, annotation.filename, annotation.type, annotation.dataset))
+        print("annotation: {}, affected chromosomes: {}".format(annotation.title, annotation.chromosomes, scenario.max_rearranged))
+        print("proposed affected chromosomes: {}, chromosome number: {}".format(scenario.last_rearranged, scenario.max_rearranged))
+        print("extremities of the ISA multi-break:", annotation.nodes_of_multibreak)
+        print("number of the deleted nucleotides: {}, the number of duplicated nucleotides: {}".format(sum(scenario.deletions), sum(scenario.duplications)))
+
+  
 
 
 #        _________________________________
@@ -154,7 +181,7 @@ def study_sample(data, filename):
     #find what chromosomes are affeced by the connected components and what nodes do those annotations affect
     component_chr, annotationTOnodes, annotationTOcomponents =  jabba_preporcessing.annotation_of_bg_components(nxcomponents)
     #for every annotation of an event, find what chromosomes does it affect
-    anotationsTOchr = jabba_preporcessing.anotations(data)
+    anotationsTOchr = jabba_preporcessing.anotations(data, LIST_OF_ANNOTATIONS)
     #find the connected components of the multi-genome graph that include annotated events
     #maximums contains sets of chromosomes that are affected by these connected components
     #while annotation_size contains the maximum number of chromosomes in these components affected by some annotated event 
@@ -167,7 +194,7 @@ def study_sample(data, filename):
             
         for annotation in annotations_of_maximums[j]:
 
-            chromothripsis = jabba_preporcessing.annotation(annotation)
+            chromothripsis = jabba_preporcessing.annotation(annotation, filename, bg.graph['type'],bg.graph['dataset'])
 
             interesting_annotation = False
             removed_interesting = False
@@ -205,17 +232,16 @@ def study_sample(data, filename):
                             
 
             if interesting_annotation: 
-                print('\n',"Rearrange",filename, bg.graph['type'], bg.graph['dataset'], annotation, anotationsTOchr[annotation])
-                print(scenario_max_surr.rearranged, scenario_max_surr.ordered_partition, scenario_max_surr.deletions,  scenario_max_surr.duplications)
+                chromothripsis.nodes_of_multibreak = jabba_preporcessing.extremities_in_components(nxcomponents,ordered_partition_to_indexes(scenario_max_surr.ordered_partition))
+                chromothripsis.chromosomes = anotationsTOchr[annotation]
                 chromothripsis.scenario_max_sur = scenario_max_surr
-                print(jabba_preporcessing.extremities_in_components(nxcomponents,ordered_partition_to_indexes(scenario_max_surr.ordered_partition)))
 
 
             if removed_interesting:
-                print('\n',"Remove", filename, bg.graph['type'], bg.graph['dataset'], annotation, anotationsTOchr[annotation])
-                print(scenario_no_intersection_max_surr.rearranged, scenario_no_intersection_max_surr.ordered_partition, round(scenario_no_intersection_max_surr.proportion_chromo,2), scenario_no_intersection_max_surr.deletions, scenario_no_intersection_max_surr.duplications)
+                chromothripsis.nodes_of_multibreak = jabba_preporcessing.extremities_in_components(nxcomponents,ordered_partition_to_indexes(scenario_no_intersection_max_surr.ordered_partition))
+                chromothripsis.chromosomes = anotationsTOchr[annotation]
                 chromothripsis.scenario_removal_max_sur = scenario_no_intersection_max_surr
-                print(jabba_preporcessing.extremities_in_components(nxcomponents,ordered_partition_to_indexes(scenario_no_intersection_max_surr.ordered_partition)))
+
 
 
             sample.annotations.append(chromothripsis)
@@ -225,6 +251,6 @@ def study_sample(data, filename):
 
     return sample
     
-files_of_interest, typeTOtotalnumber, typeTOnumberwithchromothripsis = jabba_preporcessing.read_annotations(GRAPHS, MIN_NUMBER_OF_CHROMOSOMES)
+files_of_interest, typeTOtotalnumber, typeTOnumberwithchromothripsis = jabba_preporcessing.read_annotations(GRAPHS, MIN_NUMBER_OF_CHROMOSOMES, LIST_OF_ANNOTATIONS)
 
 scenarios = study_files_with_chromothripsis(files_of_interest)
