@@ -1,15 +1,13 @@
+#! /bin/python3
+
 #WE ASSUME THAT NEIGHBORING SEGMENTS HAVE iid's THAT DIFFER BY ONE!
 
-from fileinput import filename
 import json
-import copy
 import networkx as nx
 import os
 from collections import defaultdict
 
-from lib import auxilliary
 
-FILL = True
 
 #        ___________________________
 #_______/       INPUT               \_____________________________________________
@@ -50,8 +48,6 @@ def read_type_and_dataset(jabba_graph):
 
 
 def read_annotations(dir_name, min_number_of_chromosomes, list_of_annotations):
-    typeTOtotalnumber  = defaultdict(int)
-    typeTOnumberwithchromothripsis = defaultdict(int)
 
     files_of_interest = [] 
     total_files = 0
@@ -62,9 +58,7 @@ def read_annotations(dir_name, min_number_of_chromosomes, list_of_annotations):
         total_files +=1 
 
         data = read_json(dir_name+json_file)
-        type, dataset = read_type_and_dataset(data)
 
-        typeTOtotalnumber[type]+=1
         anotationsTOchr = anotations(data, list_of_annotations)
 
         add = False
@@ -74,14 +68,13 @@ def read_annotations(dir_name, min_number_of_chromosomes, list_of_annotations):
                 total_annotations += 1
 
         if add:
-            typeTOnumberwithchromothripsis[type] +=1
             files_of_interest.append(json_file)
 
     print("number of JaBbA graphs in {}:  {}".format(dir_name,total_files))
     print("number of JaBbA graphs in {} annotated with a complex rearrangement from a list {} affecting at least {} chromsomes: {}".format(dir_name,list_of_annotations, min_number_of_chromosomes, len(files_of_interest)))
     print("total number of complex rearrangements from a list {} affecting at least {} chromsomes: {}".format(list_of_annotations, min_number_of_chromosomes, total_annotations))
    
-    return files_of_interest, typeTOtotalnumber, typeTOnumberwithchromothripsis
+    return files_of_interest
 
 #Scans the input graph for the mutation annotations.
 #For every a mutation, for example a "chromothripsis=1",
@@ -209,6 +202,11 @@ def fill(data, bg, duplication_length, deletion_length):
                         bg.add_edge(tail, head, color ='red', length = length_interval)
 
 
+
+def get_interval_length(interval):
+    return interval['endPoint']-interval['startPoint'] + 1
+
+
 #tail and head extremities are encoded as -iid and +iid
 #we transform them into (iid, 0) and (iid, 1)  
 def end_to_ext(end):
@@ -241,261 +239,6 @@ def get_extremity(end, iid, chromosome, bg):
     gray_degree, black_degree = vertex_degrees(bg, extremity)
     return extremity, black_degree, gray_degree
 
-def get_interval_length(interval):
-    return interval['endPoint']-interval['startPoint'] + 1
 
 
-
-#        _________________________________________________________________
-#_______/      Connected components of the multi-genome graph            \_____________________________________________
-
-#selects the connected components of the multi-genome graph to which the chromosomes in "subset" belong. 
-#component_chr contains a list of chromosomes for every connected component of the breakpoint graph.
-#disjoint_unions outputs the chromosomes of the connected components of the multi-genome graph 
-
-def component_of_the_genome_graph(component_chr, subset):
-    connected_components_of_subset = set()
-    number_of_components = 0
-    for disjoint in auxilliary.disjoint_unions(component_chr):
-        if subset & disjoint:
-            number_of_components += 1
-            connected_components_of_subset = connected_components_of_subset.union(disjoint)
-    if number_of_components > 1:
-        print("Some event spans multiple components of the multi-genome graph")
-    return connected_components_of_subset
-
-#selects the components of the multi-genome graph that include annotated events affecting more than MIN_NUMBER_OF_CHROMOSOMES of chromosomes.
-#also outputs the maximum number of affected chromosomes by an event in that component. 
-
-def components_with_annotations(anotationsTOchr, component_chr,min_number_of_chromosomes):
-    annotations_of_maximums = []
-    maximums = []
-    for i in anotationsTOchr:
-        if len(anotationsTOchr[i]) >= min_number_of_chromosomes:
-            maximum = component_of_the_genome_graph(component_chr, anotationsTOchr[i])
-            add = True
-            for j in range(len(maximums)):
-                set = maximums[j]
-                if set & maximum:
-                    add = False
-                    annotations_of_maximums[j].append(i)
-            if add:
-                maximums.append(maximum)
-                annotations_of_maximums.append([i])
-    return maximums, annotations_of_maximums 
-
-
-
-
-def annotation_of_bg_components(nxcomponents):
-    
-    component_chr = []
-    annotationTOnodes = defaultdict(dict)
-    annotationTOcomponents = defaultdict(set)
-
-
-    for index in range(len(nxcomponents)):
-        graph = nxcomponents[index]
-        chromosomes = set()
-        for i in graph.edges(keys = True):
-            if i[2] != '' and i[2] != 0:
-                for mutation in str(i[2]).split("|"):
-                    if mutation not in annotationTOnodes:
-                        annotationTOnodes[mutation] = set()
-                    annotationTOnodes[mutation].add(i[0])
-                    annotationTOnodes[mutation].add(i[1])
-                    annotationTOcomponents[mutation].add(index)
-
-        for node in graph.nodes():
-            chromosomes.add(node[1])
-
-        component_chr.append(chromosomes)
-
-    return component_chr, annotationTOnodes, annotationTOcomponents
-
-
-
-
-
-#        __________________________________________________________________________
-#_______/       Analyze the connected components of the breakpoint graph            \_____________________________________________
-
-
-def number_of_gray_edges(component):
-    gray = 0
-    for node in component.nodes():
-        for edge in component.edges(node, 'color'):
-            if edge[2] == 'gray':
-                gray +=1
-    return gray/2
-    
-def circle(component):
-    for node in component.nodes():
-        if component.degree(node) != 2:
-            return False
-    return True    
-
-def extremities_in_components(nxcomponents, indexes):
-    nodes = set()
-    for index in indexes:
-        for node in nxcomponents[index].nodes():
-            nodes.add(node[0])
-    return nodes
-
-
-def find_components_with_annotation(component_annotation, annotation):
-    components_with_annotation = []
-    for i in range(len(component_annotation)):
-        if annotation in component_annotation[i]:
-            components_with_annotation.append(i)
-    return components_with_annotation
-
-
-
-
-def component_with_high_gray_degree(component):
-    nodes = component.nodes()
-    for node in nodes:
-        gray, black = vertex_degrees(component, node)
-        if gray > 1:
-            return True
-    return False
-
-#checks if the component "resembles" a deletion or a duplication of a single segment. 
-#for now this means that a component has 4 nodes that correspond to 4 consecutive block extremities,
-#i would need to also check the edges and copy numbers to be sure that this corresponds to a deletion/duplication
-
-def deletion_or_duplication(component):
-    if len(component.nodes()) == 4:
-        nodes = []
-        chromosomes = set()
-        for node in component.nodes():
-            nodes.append(node[0])
-            chromosomes.add(node[1])
-        if len(chromosomes) == 1:
-            nodes.sort()
-            if nodes[0][0] + 1 == nodes[1][0] == nodes[2][0]  == nodes[3][0] - 1 and nodes[0][1] == 1 and nodes[3][1] == 0:
-                return True
-
-    return False
-
-# Compute the separation of a component from others
-def other_extremity(node):
-    if node[0][1] == 0:
-        return((node[0][0],1),node[1])
-    else:
-        return((node[0][0],0),node[1])
-
-def surrounding_blocks(component, iidTOlength):
-    nodes = set(component.nodes())
-    min_length = float('inf')
-    for node in nodes:
-        if other_extremity(node) not in nodes:
-            min_length = min(iidTOlength[node[0][0]], min_length)
-    return min_length
-
-def surrounding_blocks_components(nxcomponents, indexes, iidTOlength):
-    nodes = set()
-    for index in indexes:
-        nodes = nodes.union(set(nxcomponents[index].nodes()))
-    min_length = float('inf')
-    for node in nodes:        
-        if other_extremity(node) not in nodes:
-            min_length = min(iidTOlength[node[0][0]], min_length)
-    return min_length
-
-
-class scenario:
-
-    def __init__(self, surrounding, max_rearranged, last_rearranged, rearranged = [], ordered_partition = None, gray = None, proportion_chromo = None, deletions = None, duplications = None):
-        self.surrounding = surrounding
-        self.proportion_chromo = proportion_chromo
-        self.max_rearranged = max_rearranged
-        self.last_rearranged = last_rearranged
-        self.rearranged = rearranged
-        self.ordered_partition = ordered_partition
-        self.gray = gray
-        self.deletions = deletions
-        self.duplications = duplications
-
-        self.filename = None
-        self.type = None
-        self.dataset = None
-
-        self.title = None
-        self.annotation = None
-
-class sample:
-    def __init__(self, filename, type, dataset):
-        self.filename = filename
-        self.type = type
-        self.dataset = dataset
-        self.annotations = []
-
-class annotation:
-    def __init__(self, title, filename, type, dataset):
-        self.filename = filename
-        self.type = type
-        self.dataset = dataset
-        self.title = title
-        self.scenario_max_sur = None
-        self.scenario_removal_max_sur = None
-        self.nodes_of_multibreak = []
-        self.chromosomes = []
-
-#        _____________________________________________
-#_______/      Modify the breakpoint graph            \_____________________________________________
-
-
-
-#joins the open ends of the components together
-#to obtain an Eulerian graph
-def join_paths_to_circles(good_ones):
-    #loose_ends store -1 if the component is already a circle
-    #the number vertices of degree one that are "loose" in JabbA otherwise.
-    loose_ends = []
-    for component in good_ones:
-        if len(component.nodes()) > 2:
-            degree_one = []
-            loose = 0 
-            for node in component.nodes('loose'):
-                degree = 0
-                for edge in component.edges(node, 'color'):
-                    if edge[2] != 'yellow':
-                        degree+=1
-                if degree%2 == 1:
-                    degree_one.append(node)
-                    if node[1] == True:
-                        loose+=1
-
-            if len(degree_one) == 0:
-                loose_ends.append(-1)
-            else: 
-                loose_ends.append(loose)
-            j = 0
-            while j < len(degree_one)-1:
-                component.add_edge(degree_one[j][0],degree_one[j+1][0], color = 'blue')
-                j = j+2
-            
-    return loose_ends
-
-# Colors the edges annotated with an annotation in blue
-def recolor(graph, annotation):
-    for edge in graph.edges(keys=True):
-        if edge[2] != '' and edge[2] != 0:
-            for mutation in str(edge[2]).split("|"):
-                if mutation == annotation:
-                    node1 = edge[0]
-                    node2 = edge[1]
-                    key = edge[2]
-                    nx.set_edge_attributes(graph, {(node1, node2, key): {'color': 'blue'}})
-
-
-def subgraph_of_breakpoint_graph(nxcomponents, maximum, component_chr):
-
-    graph=nx.MultiGraph()
-    for i in range(len(nxcomponents)):
-        if component_chr[i] & maximum:
-            graph = nx.union(graph, copy.deepcopy(nxcomponents[i]))
-    return graph
 
