@@ -13,16 +13,16 @@ MICRO is written in python3 and requires the following dependencies: networkx, j
 
 Running
 ```
-python3 mpcr.py 
+python3 micro.py 
 ```
-applies MICRO to the JaBbA graphs that are present in the directory 'jabba_data/graphs'. Upon instalation 'jabba_data/graphs' holds 22 JaBbA graphs from the [gGnome.js portal](http://mskilab.com/gGraph/) for which MICRO identifies a subset b of the novel adjacencies introduced by a chromothripsis event with the chromosome number of b being lower than the number of chromosomes that b affects in the reference genome. 
+applies MICRO to the JaBbA graphs that are present in the directory 'jabba_data/graphs'. Upon instalation 'jabba_data/graphs' holds 22 JaBbA graphs from the [gGnome.js portal](http://mskilab.com/gGraph/) discussed in the paper.
 
-The rest of the JaBbA graphs from [gGnome.js portal](http://mskilab.com/gGraph/) can be downloaded to the directory 'jabba_data/graphs' by running  
+## Data 
 
-```
+The rest of the JaBbA graphs can be downloaded from [gGnome.js portal](http://mskilab.com/gGraph/). These graphs can be downloaded to the directory 'jabba_data/graphs' by running  
+
 python3 request.py 
 
-```
 
 
 
