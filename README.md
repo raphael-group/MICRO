@@ -1,6 +1,6 @@
 ## Overview
 
-MPCR computes the chromosome number c of a subset of the novel adjacencies introduced by a complex rearrangement and outputs c if c is lower than the number of chromosomes affected by that complex rearrangement in the reference genome. MPCR takes as input a [JaBbA graph](https://www.sciencedirect.com/science/article/pii/S0092867420309971?via%3Dihub).
+Minimum Chromosome Number (MICRO) computes the chromosome number c of a subset of the novel adjacencies introduced by a complex rearrangement and outputs c if c is lower than the number of chromosomes affected by that complex rearrangement in the reference genome. MPCR takes as input a [JaBbA graph](https://www.sciencedirect.com/science/article/pii/S0092867420309971?via%3Dihub).
 
 ## Installing MPCR
 
