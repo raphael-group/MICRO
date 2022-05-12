@@ -6,7 +6,6 @@ from lib import jabba_preporcessing
 from lib import auxilliary
 from lib import samples
 
-#DUPLICATION_LENGTH = 1000, DELETION_LENGTH = 100000
 
 LIST_OF_ANNOTATIONS = ['chromothripsis']
 GRAPHS = 'jabba_data/graphs/'
@@ -134,7 +133,7 @@ def study_files_with_complex_rearrangements(files_of_interest):
                 remove.append(annotation)
 
     print("")
-    print("There are {} complex rearrangements for which there exists an ISA multi-break transforming the reference genome into a genome in which that complex rearrangemt affects less chromosomes".format(len(rearrange)))
+    print("There are {} complex rearrangements for which there exists a ISA multi-break that transforms the reference genome into a genome in which the complex rearrangemt affects less chromosomes".format(len(rearrange)))
   
     index = 0
     for annotation in rearrange:
@@ -147,7 +146,7 @@ def study_files_with_complex_rearrangements(files_of_interest):
         print("number of the deleted nucleotides: {}, the number of duplicated nucleotides: {}".format(sum(scenario.deletions), sum(scenario.duplications)))
 
     print("")
-    print("There are {} complex rearrangements for which some of the novel adjacencies are missannotated as having been introduced by that complex rearrangenent.".format(len(remove)))
+    print("There are {} complex rearrangements for which there exists a ISA multi-break that introduces adjacencies potentially missannotated as having been introduced by the complex rearrangenent.".format(len(remove)))
 
     index = 0
     for annotation in remove:
