@@ -7,18 +7,30 @@ from lib import auxilliary
 from lib import samples
 
 
-LIST_OF_ANNOTATIONS = ['chromothripsis']
+
 GRAPHS = 'jabba_data/graphs/'
 
+#        _______________________________
+#_______/       CONSTANTS               \_____________________________________________
 
 
-TEMPLATED_INSERTIONS = False
-DUPLICATION_LENGTH = 1000
-DELETION_LENGTH = 100000
-NUMBER_OF_COMPONENTS = 2
-
+LIST_OF_ANNOTATIONS = ['chromothripsis']
 
 MIN_NUMBER_OF_CHROMOSOMES = 2
+
+PROPORTION_OF_MISSANOTATION = 0.2
+
+TEMPLATED_INSERTIONS = False
+
+DUPLICATION_LENGTH = 1000
+
+DELETION_LENGTH = 100000
+
+NUMBER_OF_COMPONENTS = 1
+
+
+
+
 
 
 #        ______________________________________
@@ -46,6 +58,7 @@ def check_ordered_partition(ordered_partition, nxcomponents, bg, annotated_nodes
     ordered_partition = list(ordered_partition)
     rearranged, genome_graph = breakpointgraph.run_a_partition(ordered_partition, nxcomponents, bg, TEMPLATED_INSERTIONS)
     affected = breakpointgraph.number_of_affected_chromosomes_by_nodes(genome_graph, annotated_nodes)
+    
     
     rearranged.append(affected)
 
@@ -168,6 +181,7 @@ def study_files_with_complex_rearrangements(files_of_interest):
 
 
 def study_sample(data, filename):
+
     #find the chromosomes affected by every complex rearrangement. 
     anotationsTOchr = jabba_preporcessing.anotations(data, LIST_OF_ANNOTATIONS)
     #construct breakpoint graph and the lenghts of the synteny blocks
@@ -184,16 +198,17 @@ def study_sample(data, filename):
     maximums, annotations_of_maximums = breakpointgraph.subsets_of_related_chromosomes(anotationsTOchr,component_chr,MIN_NUMBER_OF_CHROMOSOMES )        
     
     for j in range(len(maximums)):
-        #find indexes of the connected components of the breakpoint graph that are circles and 
+        #find indexes of the connected components of the breakpoint graph that are circles (called cycles in the paper) and 
         #whose vertices are among chromosomes in maximums[j]
         indexes = filter_components(nxcomponents, component_chr, maximums[j])
         for annotation in annotations_of_maximums[j]:
+        
             
             complex_rearrangement = samples.annotation(annotation, filename, bg.graph['type'],bg.graph['dataset'])
             optimal_scenario = samples.scenario([float('inf')], len(anotationsTOchr[annotation]))
             optimal_multibreak = samples.multibreak(anotationsTOchr[annotation])
             add = False
-            
+                    
             #iterate over subsets of the connectected components of the breakpoint graph of size at most NUMBER_OF_COMPONENTS 
             for number_of_components in range(NUMBER_OF_COMPONENTS):
                 for components_of_choice in itertools.combinations(indexes, number_of_components+1):
@@ -206,12 +221,13 @@ def study_sample(data, filename):
                     ordered_partition = [components_of_choice]
                     #check what happens if the components of choice are removed
                     affected = nodes_to_affected_chromosomes(annotated_nodes_minus_multi_break_nodes)
-                    if len(affected) < len(anotationsTOchr[annotation]) and proportion_chromo<=0.2:
+                    if len(affected) < len(anotationsTOchr[annotation]) and proportion_chromo<= PROPORTION_OF_MISSANOTATION:
                         optimal_multibreak = check_if_enough_to_remove(affected, ordered_partition, nxcomponents, iidTOlength, optimal_multibreak, proportion_chromo)
                         
                     if len(intersecting_nodes) == 0:
                         rearranged, affected = check_ordered_partition(ordered_partition, nxcomponents, bg, annotated_nodes, len(anotationsTOchr[annotation]))
                         if rearranged:
+
                             optimal_scenario = check_if_scenario_more_optimal(nxcomponents, iidTOlength, affected, ordered_partition, rearranged, optimal_scenario)
                 
                             if number_of_components > 0:
@@ -240,6 +256,8 @@ def study_sample(data, filename):
 
     return sample
     
+#select the JabBaA graphs from GRAPHS that contain a complex rearrangement from LIST_OF_ANNOTATIONS that affects more than MIN_NUMBER_OF_CHROMOSOMES
 files_of_interest = jabba_preporcessing.read_annotations(GRAPHS, MIN_NUMBER_OF_CHROMOSOMES, LIST_OF_ANNOTATIONS)
+
 
 scenarios = study_files_with_complex_rearrangements(files_of_interest)

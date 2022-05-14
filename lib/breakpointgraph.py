@@ -82,7 +82,7 @@ def graphTOcircles(bg):
 #        ___________________________________________________________
 #_______/       Multi-break scearios without breakpoint reuse        \_______________________
 
-def transformbreakpointgraph(bg,components):
+def transformgenomegraph(gg,components):
   """
   Takes a list of edge-disjoint Eulerian subgraphs of bg, 
   and sort these subgraphs in bg. 
@@ -98,9 +98,9 @@ def transformbreakpointgraph(bg,components):
   for component in components:
     for edge in component.edges.data():
       if edge[2]['color'] == 'black':
-        bg.remove_edge(edge[0], edge[1])
-      if edge[2]['color'] == 'gray':
-        bg.add_edge(edge[0], edge[1], color='black')
+        gg.remove_edge(edge[0], edge[1])
+      if edge[2]['color'] == 'gray' or edge[2]['color'] == 'brown':
+        gg.add_edge(edge[0], edge[1], color='black')
 
 
 def replace_extremity(duplicated_iid, extremity):
@@ -120,19 +120,19 @@ def replace_extremity(duplicated_iid, extremity):
 #this will require renaming the extremities that belong to a duplicated segment 
 #which is done by the replace_extremity
 
-def transformbreakpointgraph_duplications(bg,components):
+def transformgenomegraph_duplications(gg,components):
   for component in components:
     duplicated_iid = set()
     for edge in component.edges.data():
       if edge[2]['color'] == 'black': 
-        bg.remove_edge(edge[0], edge[1])
+        gg.remove_edge(edge[0], edge[1])
       elif edge[2]['color'] == 'brown':
         duplicated_iid.add(min(edge[0][0][0], edge[1][0][0])+1)
     for edge in component.edges.data():
       if edge[2]['color'] == 'gray':
         extremity1 = replace_extremity(duplicated_iid, edge[0])
         extremity2 = replace_extremity(duplicated_iid, edge[1])
-        bg.add_edge(extremity1, extremity2, color='black')
+        gg.add_edge(extremity1, extremity2, color='black')
     
 
 def number_of_affected_chromosomes_by_nodes(genome_graph, nodes):
@@ -159,9 +159,9 @@ def run_a_partition(ordered_partition,nxcomponents, bg, templated_insertions):
 
     rearranged.append(number_of_affected_chromosomes_by_nodes(genome_graph, nodes))
     if templated_insertions:
-      transformbreakpointgraph(genome_graph,components)
+      transformgenomegraph(genome_graph,components)
     else:
-      transformbreakpointgraph_duplications(genome_graph,components)
+      transformgenomegraph_duplications(genome_graph,components)
   return rearranged, genome_graph
 
   

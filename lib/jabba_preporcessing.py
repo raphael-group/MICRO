@@ -1,6 +1,6 @@
 #! /bin/python3
 
-#WE ASSUME THAT NEIGHBORING SEGMENTS HAVE iid's THAT DIFFER BY ONE!
+#WE ASSUME THAT NEIGHBORING SEGMENTS in a JaBbaA graph HAVE iid's THAT DIFFER BY ONE!
 
 import json
 import networkx as nx
