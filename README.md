@@ -19,7 +19,7 @@ applies MICRO to the JaBbA graphs that are present in the directory 'jabba_data/
 
 ## Data 
 
-The rest of the JaBbA graphs can be downloaded from [gGnome.js portal](http://mskilab.com/gGraph/). These graphs can be downloaded to the directory 'jabba_data/graphs' by running  
+The rest of the JaBbA graphs can be downloaded from [gGnome.js portal](http://mskilab.com/gGraph/). At the time of publication these graphs can be downloaded to the directory 'jabba_data/graphs' by running  
 
 python3 request.py 
 
