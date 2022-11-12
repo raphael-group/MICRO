@@ -26,7 +26,7 @@ DUPLICATION_LENGTH = 1000
 
 DELETION_LENGTH = 100000
 
-NUMBER_OF_COMPONENTS = 1
+NUMBER_OF_COMPONENTS = 2
 
 
 
@@ -157,6 +157,7 @@ def study_files_with_complex_rearrangements(files_of_interest):
         print("annotation: {}, affected chromosomes: {}, chromosome number: {}".format(annotation.title, annotation.chromosomes, scenario.affected))
         print("extremities of the identified ISA {}-break: {}".format(int(sum(scenario.numbers_of_gray_edges)), annotation.nodes_of_multibreak))
         print("number of the deleted nucleotides: {}, the number of duplicated nucleotides: {}".format(sum(scenario.deletions), sum(scenario.duplications)))
+        print("chromosomes in a chromosome graph component: {}".format(annotation.chromosomes_in_a_chromosome_graph_component))
 
     print("")
     print("There are {} complex rearrangements for which there exists a ISA multi-break that introduces adjacencies potentially missannotated as having been introduced by the complex rearrangenent.".format(len(remove)))
@@ -171,6 +172,8 @@ def study_files_with_complex_rearrangements(files_of_interest):
         print("proposed affected chromosomes: {}, chromosome number: {}".format(scenario.affected, len(scenario.affected)))
         print("extremities of the identified ISA {}-break: {}".format(int(sum(scenario.numbers_of_gray_edges)), annotation.nodes_of_multibreak))
         print("number of the deleted nucleotides: {}, the number of duplicated nucleotides: {}".format(sum(scenario.deletions), sum(scenario.duplications)))
+        print("chromosomes in a chromosome graph component: {}".format(annotation.chromosomes_in_a_chromosome_graph_component))
+
 
   
 
@@ -204,7 +207,7 @@ def study_sample(data, filename):
         for annotation in annotations_of_maximums[j]:
         
             
-            complex_rearrangement = samples.annotation(annotation, filename, bg.graph['type'],bg.graph['dataset'])
+            complex_rearrangement = samples.annotation(annotation, filename, bg.graph['type'],bg.graph['dataset'],maximums[j])
             optimal_scenario = samples.scenario([float('inf')], len(anotationsTOchr[annotation]))
             optimal_multibreak = samples.multibreak(anotationsTOchr[annotation])
             add = False

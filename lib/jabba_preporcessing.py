@@ -194,9 +194,14 @@ def fill(data, bg, duplication_length, deletion_length):
             iid_right = interval_right['iid']
             right_tail, right_black, right_gray = get_extremity(0, iid_right, chromosome, bg)
 
-            if right_gray + left_gray == 0 and tail_gray == 1 and head_gray == 1 and length_interval < duplication_length:
+            cn = interval['y']
+            cn_left = interval_left['y']
+            cn_right = interval_right['y']
+
+            if right_gray + left_gray == 0 and tail_gray == 1 and head_gray == 1 and length_interval < duplication_length and cn_left < cn and cn_right < cn:
                 bg.add_edge(left_head, right_tail, color ='brown', length = length_interval)
-            elif right_gray == 1 and left_gray == 1 and tail_gray + head_gray == 0:
+
+            elif right_gray == 1 and left_gray == 1 and tail_gray + head_gray == 0  and cn_left > cn and cn_right > cn:
                 if length_interval < deletion_length:
                     if color_degree(bg, tail, 'brown') == 0 and color_degree(bg, head, 'brown') == 0:
                         bg.add_edge(tail, head, color ='red', length = length_interval)
